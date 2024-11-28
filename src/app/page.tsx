@@ -1,101 +1,160 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from 'react';
+import RegisterButton from "./RegisterButton"; 
+import LoginButton from './LoginButton';
+
+// Definir los vuelos disponibles
+const Vuelos = [
+  { id: 1, aerolinea: 'Aeromexico', origen: 'CDMX', destino: 'NYC', fecha: '2024-12-15', hora: '10:00 AM', duracion: '4h 30m', precio: '$500' },
+  { id: 2, aerolinea: 'Delta Airlines', origen: 'NYC', destino: 'LAX', fecha: '2024-12-16', hora: '2:00 PM', duracion: '6h', precio: '$400' },
+  { id: 3, aerolinea: 'American Airlines', origen: 'LAX', destino: 'CDMX', fecha: '2024-12-17', hora: '9:00 AM', duracion: '5h 15m', precio: '$350' }
+];
+
+const HomePage = () => {
+  const [origen, setOrigen] = useState('');
+  const [destino, setDestino] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [userData, setUserData] = useState<{ firstName: string; lastName: string } | null>(null); // Estado para el usuario
+  const [reservas, setReservas] = useState<Array<{ vueloId: number, usuario: { firstName: string; lastName: string } }>>([]); // Estado para las reservas
+
+  // Filtrar vuelos disponibles
+  const filtrarVuelos = () => {
+    return Vuelos.filter(vuelo => 
+      (origen ? vuelo.origen === origen : true) &&
+      (destino ? vuelo.destino === destino : true) &&
+      (fecha ? vuelo.fecha === fecha : true)
+    );
+  };
+
+  // Función para manejar el login y actualizar el estado de userData
+  const handleLoginSuccess = (firstName: string, lastName: string) => {
+    setUserData({ firstName, lastName });
+  };
+
+  // Función para manejar la reserva de un vuelo
+  const handleReservar = (vuelo: typeof Vuelos[0]) => {
+    if (!userData) {
+      alert('Debes iniciar sesión para realizar una reserva');
+      return;
+    }
+
+    // Verificar si el vuelo ya está reservado por otro usuario
+    const vueloYaReservado = reservas.find(reserva => reserva.vueloId === vuelo.id);
+    
+    if (vueloYaReservado) {
+      alert(`El vuelo de ${vuelo.aerolinea} ya ha sido reservado por ${vueloYaReservado.usuario.firstName} ${vueloYaReservado.usuario.lastName}`);
+      return;
+    }
+
+    // Si no está reservado, agregar la reserva
+    setReservas([...reservas, { vueloId: vuelo.id, usuario: userData }]);
+    alert(`Reserva exitosa para el vuelo de ${vuelo.aerolinea}`);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Reserva de Vuelos</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Mostrar los botones de login y registro */}
+      <RegisterButton />
+      <LoginButton onLoginSuccess={handleLoginSuccess} />
+
+      {/* Mostrar los datos del usuario después de login */}
+      {userData && (
+        <div className="bg-blue-500 text-white p-4 mt-4 rounded shadow-lg">
+          <h2>Bienvenido, {userData.firstName} {userData.lastName}!</h2>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      )}
+
+      {/* Formulario de selección de vuelos */}
+      <div className="mb-6">
+        <label className="block text-lg mb-2">Origen</label>
+        <input
+          type="text"
+          className="border p-2 w-full"
+          value={origen}
+          onChange={(e) => setOrigen(e.target.value)}
+          placeholder="Ej: CDMX"
+        />
+
+        <label className="block text-lg mb-2 mt-4">Destino</label>
+        <input
+          type="text"
+          className="border p-2 w-full"
+          value={destino}
+          onChange={(e) => setDestino(e.target.value)}
+          placeholder="Ej: NYC"
+        />
+
+        <label className="block text-lg mb-2 mt-4">Fecha de vuelo</label>
+        <input
+          type="date"
+          className="border p-2 w-full"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+        />
+
+        <button
+          className="bg-blue-500 text-white p-2 mt-4 w-full"
+          onClick={filtrarVuelos}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Buscar Vuelos
+        </button>
+      </div>
+
+      {/* Lista de vuelos disponibles */}
+      <div>
+        {filtrarVuelos().length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtrarVuelos().map((vuelo) => (
+              <div key={vuelo.id} className="border p-4 rounded shadow-lg">
+                <h2 className="font-bold text-xl">{vuelo.aerolinea}</h2>
+                <p><strong>Origen:</strong> {vuelo.origen}</p>
+                <p><strong>Destino:</strong> {vuelo.destino}</p>
+                <p><strong>Fecha:</strong> {vuelo.fecha}</p>
+                <p><strong>Hora:</strong> {vuelo.hora}</p>
+                <p><strong>Duración:</strong> {vuelo.duracion}</p>
+                <p><strong>Precio:</strong> {vuelo.precio}</p>
+                <button
+                  className="bg-green-500 text-white p-2 mt-4 w-full"
+                  onClick={() => handleReservar(vuelo)} // Llamada a la función de reserva
+                  disabled={reservas.some(reserva => reserva.vueloId === vuelo.id)} // Deshabilitar el botón si ya está reservado
+                >
+                  {reservas.some(reserva => reserva.vueloId === vuelo.id) ? 'Ya Reservado' : 'Reservar'}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No se encontraron vuelos disponibles.</p>
+        )}
+      </div>
+
+      {/* Mostrar las reservas realizadas */}
+      <div className="mt-6">
+        {reservas.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold">Tus Reservas</h2>
+            <ul>
+              {reservas.map((reserva, index) => (
+                <li key={index} className="border p-4 mt-4 rounded shadow-lg">
+                  <h3 className="font-semibold">{Vuelos.find(vuelo => vuelo.id === reserva.vueloId)?.aerolinea}</h3>
+                  <p><strong>Origen:</strong> {Vuelos.find(vuelo => vuelo.id === reserva.vueloId)?.origen}</p>
+                  <p><strong>Destino:</strong> {Vuelos.find(vuelo => vuelo.id === reserva.vueloId)?.destino}</p>
+                  <p><strong>Fecha:</strong> {Vuelos.find(vuelo => vuelo.id === reserva.vueloId)?.fecha}</p>
+                  <p><strong>Hora:</strong> {Vuelos.find(vuelo => vuelo.id === reserva.vueloId)?.hora}</p>
+                  <p><strong>Duración:</strong> {Vuelos.find(vuelo => vuelo.id === reserva.vueloId)?.duracion}</p>
+                  <p><strong>Precio:</strong> {Vuelos.find(vuelo => vuelo.id === reserva.vueloId)?.precio}</p>
+                  <p><strong>Reservado por:</strong> {reserva.usuario.firstName} {reserva.usuario.lastName}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default HomePage;
